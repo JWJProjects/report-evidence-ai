@@ -2,27 +2,30 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#182332">
+<meta name="theme-color" content="#F3EFE6">
 <link rel="icon" href="assets/icon.svg"><title>案跡｜成果與佐證工作台</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
 <a href="#main" class="skip">前往主要內容</a>
-<header class="top">
- <a href="./" class="brand"><span class="logo">▦</span><span>案跡 <small>EVIDENCE DESK</small></span></a>
- <div class="header-right"><span class="online"><i></i> 本機運作</span><span class="demo-label">SYNTHETIC DATA</span></div>
-</header>
+<header class="top"><div class="masthead">
+ <div class="brand-line"><a href="./" class="brand">案跡</a> <span class="journal-name">成果與佐證卷宗</span></div>
+ <p class="plain-data">合成資料 <span class="dot-sep">・</span> <span class="local-note">本機處理</span></p>
+</div></header>
 <div class="shell">
-<aside aria-label="工作區">
+<aside class="contents" aria-label="工作區">
  <section class="side-section">
-  <p class="eyebrow">01 / 工作空間</p>
-  <h2>成果呈報</h2>
+  <h2>卷宗目錄</h2>
   <label for="template">報告模板</label>
   <select id="template" aria-label="報告模板"><option value="education">教育活動成果</option><option value="policy">施政計畫成果</option></select>
   <div id="sidebar-project"></div>
  </section>
  <nav id="nav" class="side-section" aria-label="功能"></nav>
- <section class="side-section gauges"><p class="eyebrow">02 / 文件索引</p><div id="index-summary"></div></section>
- <footer class="aside-foot">示範資料，不對應真實機關或標案。<br>範例可改，流程可重用。</footer>
+ <div class="mobile-nav">
+  <label for="view-picker">卷宗頁籤</label>
+  <select id="view-picker"></select>
+ </div>
+ <section class="side-section gazette"><p class="sidebar-label">卷內索引</p><div id="index-summary"></div></section>
+ <footer class="aside-foot">卷內記錄與操作均存於本機。</footer>
 </aside>
 <main id="main" tabindex="-1"></main>
 </div>
