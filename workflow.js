@@ -16,7 +16,7 @@ export const templates={
  policy:{
   name:'施政計畫成果', project:'溪畔慢行改善計畫', series:'POL / 02', tag:'跨單位管考',
   fields:[
-   ['unit','主責單位','示範市公共空間組','text'],
+   ['unit','主責單位','測試單位 A','text'],
    ['period','填報期別','2026 第 3 季','text'],
    ['completion','工程成果（公尺）','320','number'],
    ['summary','執行與風險摘要','完成首批慢行標線與雨水設施巡查；第二階段排程仍待確認。','textarea'],

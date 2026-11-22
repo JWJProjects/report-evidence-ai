@@ -6,8 +6,10 @@ import {createEngine} from '../engine.js';
 test('submit, return with reason, amend, approve, publish and export are auditable',()=>{
  let r=initial('education');
  assert.throws(()=>move(r,'approve'));
+ assert.throws(()=>move(r,'publish'));
  r=move(r,'submit');
  assert.throws(()=>move(r,'return'));
+ assert.throws(()=>move(r,'publish'));
  assert.throws(()=>edit(r,r.fields));
  r=move(r,'return','補上活動照片');
  r=edit(r,{...r.fields,sessions:'6'});
