@@ -1,0 +1,11 @@
+{
+  "schema": "portfolio.qa-evidence.v1",
+  "profile": "policy",
+  "synthetic": true,
+  "result": {
+    "totalRows": 18,
+    "passedRows": 13,
+    "reviewRows": 1,
+    "rejectedRows": 4
+  }
+}
