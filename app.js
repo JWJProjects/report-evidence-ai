@@ -47,20 +47,22 @@ function highlight(text,tokens){
 function drawHero(record,t){
  const now=record.status==='returned'?'draft':record.status;
  const stageIndex=t.stages.findIndex(([id])=>id===now);
- return '<section class="hero"><div><p class="eyebrow">CASE / '+esc(t.series)+' • '+esc(t.tag)+'</p><h1>'+esc(t.project)+'</h1><p>'+esc(t.name)+' / 成果填報、證據回查與發布</p></div><span class="status"><b>STATUS</b>'+statuses[record.status]+'</span></section>'+
-     '<div class="steps" aria-label="流程進度">'+t.stages.map(([id,label],i)=>'<div class="step '+(i===stageIndex?(record.status==='returned'?'returned':'active'):i<stageIndex?'done':'')+'" '+(i===stageIndex?'aria-current="step"':'')+'><b>0'+(i+1)+'</b>'+esc(i===stageIndex&&record.status==='returned'?'退回補正':label)+'</div>').join('')+'</div>';
+ const date=record.events[record.events.length-1]?.time;
+ return '<section class="hero"><div class="hero-title"><div><p class="file-kicker">案號 <span class="id-data">'+esc(t.series)+'</span> ・ 卷宗版本 <span class="id-data">1.0</span></p><h1>'+esc(t.project)+'</h1><p class="folio">'+esc(t.name)+' ・ '+esc(t.tag)+'</p></div><span class="status" data-state="'+esc(record.status)+'"><b>目前狀態</b>'+statuses[record.status]+(date?'<small>'+esc(dateFmt.format(new Date(date)).split(' ')[0])+'</small>':'')+'</span></div>'+
+     '<ol class="steps" aria-label="流程進度">'+t.stages.map(([id,label],i)=>'<li class="step '+(i===stageIndex?(record.status==='returned'?'returned':'active'):i<stageIndex?'done':'')+'" '+(i===stageIndex?'aria-current="step"':'')+'><span>'+esc(i===stageIndex&&record.status==='returned'?'退回補正':label)+'</span></li>').join('')+'</ol></section>';
 }
 function drawEvidence(t,engine){
  const r=engine.search(query);
- const best=r.ranked[0]?.score||1;
- const quote=hit=>'<article class="'+(r.state==='conflict'?'conflict-card':'')+'"><div class="src-row"><span class="source-meta">'+esc(hit.section+' · '+hit.version+' · '+hit.date+' · '+hit.kind)+'</span>'+
+ const quote=hit=>'<article class="'+(r.state==='conflict'?'conflict-card':'')+'"><div class="src-row"><strong class="source-title">'+esc(hit.title)+'</strong><span class="source-meta">'+esc(hit.section+' · '+hit.version+' · '+hit.date+' · '+hit.kind)+'</span>'+
   sourceButton(hit.id,'查閱原文',hit.section)+'</div><p>'+highlight(hit.text,r.highlight)+'</p></article>';
- return '<section class="card query-box"><h2>從文件找答案</h2><p class="subtext">以中文詞彙比對並排序，回傳可回查的原文；不生成答案。</p><form class="query-form" id="ask"><input class="text" type="search" name="question" aria-label="輸入問題" maxlength="180" placeholder="例如：驗收要哪些附件？" value="'+esc(query)+'" required><button class="primary">找證據</button></form><div class="pills">'+t.demos.map(([q,caption])=>'<button type="button" class="pill" title="'+esc(caption)+'" aria-pressed="'+(q===query)+'" data-query="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div></section>'+
- '<div class="desk-grid"><section class="card" aria-label="證據結果" aria-live="polite"><div class="outcome '+r.state+'"><span class="symbol" aria-hidden="true">'+({answer:'✓',conflict:'!',unknown:'?'})[r.state]+'</span><div><strong>'+stateText[r.state]+'</strong><p>'+descriptions[r.state]+'</p></div></div>'+
- (r.state==='conflict'?'<div class="value-list" aria-label="文件中的日期">'+r.values.slice().sort().map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
- (r.claimRows.length?'<div class="hits">'+r.claimRows.map(quote).join('')+'</div>':'<div class="callout">這份報告不應把「還沒找到」當成「不存在」。如果有具體文件，可在「來源文件」新增佐證再查一次。</div>')+'</section>'+
- '<section class="card"><h2>段落相關度</h2><p class="subtext">排序分數，不等於可信度或答案機率。</p>'+
- (r.ranked.length?'<ol class="ranked">'+r.ranked.map(h=>'<li><div class="bar-head">'+sourceButton(h.id,h.title,h.section)+'<b>'+h.score.toFixed(1)+'</b></div><span class="track" aria-hidden="true"><i style="width:'+Math.round(h.score/best*100)+'%"></i></span><span class="source-meta">'+esc(h.section+' · '+h.version)+'</span></li>').join('')+'</ol>':'<p class="help">沒有達到最低字詞命中的段落。</p>')+'</section></div>';
+ return {
+  paper:'<section class="card query-box"><h2>從文件找答案</h2><p class="subtext">以中文詞彙比對並排序，回傳可回查的原文；不生成答案。</p><form class="query-form" id="ask"><input class="text" type="search" name="question" aria-label="輸入問題" maxlength="180" placeholder="例如：驗收要哪些附件？" value="'+esc(query)+'" required><button class="primary">找證據</button></form><div class="pills">'+t.demos.map(([q,caption])=>'<button type="button" class="pill" title="'+esc(caption)+'" aria-pressed="'+(q===query)+'" data-query="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div></section>'+
+   '<section class="card" aria-label="證據結果" aria-live="polite"><div class="outcome '+r.state+'"><span class="symbol" aria-hidden="true">'+({answer:'✓',conflict:'!',unknown:'?'})[r.state]+'</span><div><strong>'+stateText[r.state]+'</strong><p>'+descriptions[r.state]+'</p></div></div>'+
+   (r.state==='conflict'?'<div class="value-list" aria-label="文件中的日期">'+r.values.slice().sort().map(v=>'<span>'+esc(v)+'</span>').join('')+'</div>':'')+
+   (r.claimRows.length?'<div class="hits '+(r.state==='conflict'?'compare':'')+'">'+r.claimRows.map(quote).join('')+'</div>':'<div class="callout">這份報告不應把「還沒找到」當成「不存在」。如果有具體文件，可在「來源文件」新增佐證再查一次。</div>')+'</section>',
+  margin:'<section class="card marginal"><p class="sidebar-label">索引附註</p><h2>段落相關度</h2><p class="subtext">排序分數，不等於可信度或答案機率。</p>'+
+   (r.ranked.length?'<ol class="ranked">'+r.ranked.map((h,i)=>'<li><div class="bar-head">'+sourceButton(h.id,h.title,h.section)+'<b>'+h.score.toFixed(1)+'</b></div><span class="source-meta">'+esc(String(i+1).padStart(2,'0')+' · '+h.section+' · '+h.version)+'</span></li>').join('')+'</ol>':'<p class="help">沒有達到最低字詞命中的段落。</p>')+'</section>'
+ };
 }
 function drawLog(events,limit=8){
  return '<ol class="log">'+events.slice(-limit).reverse().map(ev=>'<li><strong>'+esc(ev.action)+'</strong><span class="source-meta">'+esc((ev.from?statuses[ev.from]+' → ':'')+statuses[ev.to]+' · '+ev.role+' · '+dateFmt.format(new Date(ev.time)))+'</span>'+(ev.note?'<p>'+esc(ev.note)+'</p>':'')+'</li>').join('')+'</ol>';
@@ -68,21 +70,30 @@ function drawLog(events,limit=8){
 function drawReport(record,t){
  const editable=['draft','returned'].includes(record.status), links=transitions[record.status];
  const fieldHTML=t.fields.map(([id,label,,kind])=>'<label class="field">'+esc(label)+(editable?' <span class="help">必填</span>':'')+(kind==='textarea'?'<textarea name="'+esc(id)+'" rows="3" maxlength="1500" '+(editable?'required':'disabled')+'>'+esc(record.fields[id])+'</textarea>':'<input class="text" '+(kind==='number'?'inputmode="numeric" pattern="[0-9]+"':'')+' name="'+esc(id)+'" value="'+esc(record.fields[id])+'" maxlength="1500" '+(editable?'required':'disabled')+'>')+'</label>').join('');
- return '<div class="cols"><section class="card"><h2>成果填報單</h2><p class="subtext">'+(editable?'填寫示範欄位，送出後欄位鎖定，退回時可補正。':'這個階段只能檢閱內容。審查期間可退回補正。')+'</p><form id="report"><div class="fields">'+fieldHTML+
- (record.status==='review'?'<label class="field">審查意見<textarea name="note" rows="2" maxlength="800" placeholder="退回時必填，例如：請補兩張活動照片"></textarea></label>':'')+'</div><div class="actions">'+
- Object.entries(links).map(([id,[,label,role]])=>'<button class="'+(id==='return'?'warn':'primary')+'" name="move" value="'+id+'" title="模擬角色：'+esc(role)+'">'+esc(label)+'</button>').join('')+
- (editable?'<button class="quiet" name="move" value="save">儲存草稿</button>':'')+
- '<button type="button" class="quiet" id="download">匯出 JSON</button><button type="button" class="quiet" data-view="evidence">檢查佐證 →</button></div></form>'+
- '<p class="cc">角色為流程示意，非登入權限。發布僅更新本機示範狀態。</p><p role="status" class="notice '+(hasError?'error':'')+'">'+esc(msg)+'</p></section>'+
- '<div class="stack"><section class="card"><h2>審核軌跡</h2><p class="subtext">每筆記錄含角色、時間、原狀態與新狀態。</p>'+drawLog(record.events)+'</section>'+
- (record.status==='published'?'<section class="card"><h2>公開版預覽</h2><p class="subtext">僅顯示欄位白名單：不帶審查意見或原始佐證。</p><dl class="preview">'+t.fields.filter(([id])=>t.publicFields.includes(id)).map(([id,label])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(record.fields[id])+'</dd></div>').join('')+'</dl></section>':'<section class="card"><h2>佐證材料</h2><p class="subtext">目前有 '+docList().length+' 份文件可回查；摘要不取代原文。</p><div class="actions"><button type="button" class="quiet" data-view="sources">查看文件 →</button></div></section>')+'</div></div>';
+ const publicSheet='<section class="card public-sheet"><p class="sidebar-label">卷宗副本 ・ 對外欄位</p><h2>公開版預覽</h2><p class="subtext">僅顯示欄位白名單。</p><dl class="preview">'+t.fields.map(([id,label])=>'<div><dt>'+esc(label)+'</dt><dd>'+(t.publicFields.includes(id)?esc(record.fields[id]):'<span class="redacted">不公開</span>')+'</dd></div>').join('')+
+  '<div><dt>審查意見與原始佐證</dt><dd><span class="redacted">不公開</span></dd></div></dl></section>';
+ const latestReturn=record.events.slice().reverse().find(x=>x.to==='returned');
+ const recentNote=record.status==='returned'&&latestReturn?.note ? '<div class="callout review-note"><strong>請補正</strong><p class="document-copy">'+esc(latestReturn.note)+'</p></div>' : '';
+ return {
+  paper:'<section class="card"><h2>成果填報單</h2><p class="subtext">'+(editable?'填寫示範欄位，送出後欄位鎖定，退回時可補正。':'這個階段只能檢閱內容。審查期間可退回補正。')+'</p>'+recentNote+'<form id="report"><div class="fields">'+fieldHTML+
+  (record.status==='review'?'<label class="field review-note wide">審查意見<textarea name="note" rows="2" maxlength="800" placeholder="退回時必填，例如：請補兩張活動照片"></textarea></label>':'')+'</div><div class="actions">'+
+   Object.entries(links).map(([id,[,label,role]])=>'<button class="'+(id==='return'?'warn':'primary')+'" name="move" value="'+id+'" title="模擬角色：'+esc(role)+'">'+esc(label)+'</button>').join('')+
+   (editable?'<button class="quiet" name="move" value="save">儲存草稿</button>':'')+
+   '<button type="button" class="quiet" id="download">匯出 JSON</button><button type="button" class="quiet" data-view="evidence">檢查佐證 →</button></div></form>'+
+   '<p class="cc">角色為流程示意，非登入權限。發布僅更新本機示範狀態。</p><p role="status" tabindex="-1" class="notice '+(hasError?'error':'')+'">'+esc(msg)+'</p></section>',
+  margin:'<div class="stack">'+(record.status==='published'?publicSheet:'')+
+   '<section class="card marginal"><p class="sidebar-label">頁邊批註</p><h2>審核軌跡</h2><p class="subtext">每筆記錄含角色、時間、原狀態與新狀態。</p>'+drawLog(record.events)+'</section>'+
+   (record.status==='published'?'':'<section class="card marginal"><h2>佐證材料</h2><p class="subtext">目前有 '+docList().length+' 份文件可回查；摘要不取代原文。</p><div class="actions"><button type="button" class="quiet" data-view="sources">查看文件 →</button></div></section>')+'</div>'
+ };
 }
 function drawSources(docs,record){
  const editable=['draft','returned'].includes(record.status);
- return '<div class="cols"><section class="card"><h2>來源清單</h2><p class="subtext">每份文件有版本、日期與段落，點開可閱讀原文。</p><div class="file-list">'+docs.map(d=>'<button type="button" class="quiet" data-doc="'+esc(d.id)+'"><b>'+esc(d.icon)+'</b>'+esc(d.title)+'<br><span class="source-meta">'+esc(d.kind+' · '+d.date+' · '+d.version+' · '+d.paragraphs.length+' 段')+'</span></button>').join('')+'</div></section>'+
- '<section class="card"><h2>補充文字佐證</h2><p class="subtext">將合成範例或已脫敏的原文貼進來，儲存後重新建立檢索索引。</p>'+
- (editable?'<form id="source-add" class="fields"><label class="field">文件標題<input required maxlength="80" class="text" name="title"></label><label class="field">原文段落<textarea required maxlength="1500" rows="4" name="body"></textarea></label><button class="primary">新增到本機佐證</button></form><form id="source-import" class="fields"><label class="field">匯入品管摘要（JSON，不含原始列）<input type="file" name="file" accept=".json,application/json" required></label><button class="quiet">匯入彙總，建立佐證</button></form>':'<p class="callout">只在草稿或退回補正階段可新增佐證。</p>')+
- '<p role="status" class="notice '+(hasError?'error':'')+'">'+esc(msg)+'</p></section></div>';
+ return {
+  paper:'<section class="card"><h2>來源清單</h2><p class="subtext">每份文件有版本、日期與段落，點開可閱讀原文。</p><div class="file-list">'+docs.map(d=>'<button type="button" class="quiet" data-doc="'+esc(d.id)+'"><b aria-hidden="true">'+esc(d.icon)+'</b> '+esc(d.title)+'<br><span class="source-meta">'+esc(d.kind+' · '+d.date+' · '+d.version+' · '+d.paragraphs.length+' 段')+'</span></button>').join('')+'</div></section>',
+  margin:'<section class="card marginal source-editor"><p class="sidebar-label">卷宗增補</p><h2>補充文字佐證</h2><p class="subtext">將合成範例或已脫敏的原文貼進來，儲存後重新建立檢索索引。</p>'+
+   (editable?'<form id="source-add" class="fields"><label class="field">文件標題<input required maxlength="80" class="text" name="title"></label><label class="field">原文段落<textarea required maxlength="1500" rows="4" name="body"></textarea></label><button class="primary">新增到本機佐證</button></form><form id="source-import" class="fields"><label class="field">匯入品管摘要（JSON，不含原始列）<input type="file" name="file" accept=".json,application/json" required></label><button class="quiet">匯入彙總，建立佐證</button></form>':'<p class="callout">只在草稿或退回補正階段可新增佐證。</p>')+
+   '<p role="status" tabindex="-1" class="notice '+(hasError?'error':'')+'">'+esc(msg)+'</p></section>'
+ };
 }
 function drawQuality(){
  const e=evaluate();
@@ -91,26 +102,48 @@ function drawQuality(){
 }
 function render(){
  const t=templates[current],r=load(current),docs=docList(),engine=createEngine(docs);
+ const items=Object.entries(views);
  $('#template').value=current;
  $('#sidebar-project').innerHTML='<div class="project"><span>'+esc(t.series)+'</span><span>'+esc(t.project)+'</span></div>';
- $('#nav').innerHTML=Object.entries(views).map(([id,[icon,label]])=>'<button type="button" class="nav-btn" data-view="'+id+'" '+(id===view?'aria-current="page"':'')+'><b aria-hidden="true">'+icon+'</b>'+label+'</button>').join('');
- $('#index-summary').innerHTML='<div class="guide-nums"><div><strong>'+engine.stats.docs+'</strong><span>索引文件</span></div><div><strong>'+engine.stats.passages+'</strong><span>可回查段落</span></div></div><div class="data-bar" aria-hidden="true">'+docs.map(d=>'<span style="flex:'+d.paragraphs.length+'"></span>').join('')+'</div>';
- $('#main').innerHTML=drawHero(r,t)+(storageError?'<p class="callout">此瀏覽器無法持續保存目前變更；請以匯出檔保留紀錄。</p>':'')+({report:()=>drawReport(r,t),evidence:()=>drawEvidence(t,engine),sources:()=>drawSources(docs,r),quality:drawQuality})[view]();
+ $('#nav').innerHTML=items.map(([id,[,label]],i)=>'<button type="button" class="nav-btn" data-view="'+id+'" '+(id===view?'aria-current="page"':'')+'><span aria-hidden="true">0'+(i+1)+'</span>'+label+'</button>').join('');
+ const picker=$('#view-picker');
+ if(!picker.options.length)picker.innerHTML=items.map(([id,[,label]])=>'<option value="'+id+'">'+label+'</option>').join('');
+ picker.value=view;
+ $('#index-summary').innerHTML='<p class="guide-nums"><strong>'+engine.stats.docs+'</strong> 索引文件<br><strong>'+engine.stats.passages+'</strong> 可回查段落</p>';
+ const contents=({report:()=>drawReport(r,t),evidence:()=>drawEvidence(t,engine),sources:()=>drawSources(docs,r),quality:()=>({paper:drawQuality(),margin:'<section class="card marginal"><p class="sidebar-label">驗證附註</p><h2>資料範圍</h2><p class="subtext">使用固定的合成集核對檢索行為。發現衝突或缺乏資料時，仍由審核人判讀。</p></section>'})})[view]();
+ $('#main').innerHTML='<div class="case-layout"><div class="paper">'+drawHero(r,t)+'<div class="paper-body"><div class="reading">'+
+  (storageError?'<p class="callout">此瀏覽器無法持續保存目前變更；請以匯出檔保留紀錄。</p>':'')+contents.paper+
+  '</div></div></div>'+contents.margin+'</div>';
 }
-function showDoc(id,section){
+let sourceOpener=null;
+function showDoc(id,section,opener){
  const doc=docList().find(d=>d.id===id);
  if (!doc) return;
- $('#source-detail').innerHTML='<div class="dialog-heading"><p class="eyebrow">SOURCE / 佐證原文</p><h2 id="source-title">'+esc(doc.title)+'</h2><span class="source-meta">'+esc(doc.kind+' · '+doc.version+' · '+doc.date)+'</span></div>'+
- doc.paragraphs.map(([seg,txt])=>'<section '+(seg===section?'class="selected"':'')+'><b class="source-meta">'+esc(seg)+'</b><p>'+esc(txt)+'</p></section>').join('');
- $('#source-dialog').showModal();
+ const tokens=(section&&view==='evidence')?createEngine(docList()).search(query).highlight:[];
+ $('#source-detail').innerHTML='<div class="dialog-heading"><p class="sidebar-label">卷內原文</p><h2 id="source-title">'+esc(doc.title)+'</h2><span class="source-meta">'+esc(doc.kind+' · '+doc.version+' · '+doc.date)+'</span></div>'+
+ doc.paragraphs.map(([seg,txt])=>'<section '+(seg===section?'class="selected"':'')+'><b class="source-meta">'+esc(seg)+'</b><p>'+(seg===section?highlight(txt,tokens):esc(txt))+'</p></section>').join('');
+ const dialog=$('#source-dialog');
+ sourceOpener=opener;
+ dialog.showModal();
+ const target=dialog.querySelector('.selected');
+ if(target)target.scrollIntoView({block:'nearest'});
 }
+const sourceDialog=$('#source-dialog');
+sourceDialog.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&sourceDialog.open){e.preventDefault();sourceDialog.close();}
+});
+sourceDialog.addEventListener('close',()=>{
+ if(sourceOpener?.isConnected)sourceOpener.focus({preventScroll:true});
+ sourceOpener=null;
+});
 $('#template').addEventListener('change',e=>{current=e.target.value;query=templates[current].demos[0][0];msg='';hasError=false;render();});
+$('#view-picker').addEventListener('change',e=>{view=e.target.value;msg='';hasError=false;render();$('#main').focus();});
 document.addEventListener('click',e=>{
  const btn=e.target.closest('button');
  if(!btn) return;
  if(btn.dataset.view){view=btn.dataset.view;msg='';hasError=false;render();(btn.closest('#nav')?$('#nav button[aria-current]'):$('#main')).focus();}
  else if(btn.dataset.query){query=btn.dataset.query;render();$('.pill[aria-pressed=true]').focus();}
- else if(btn.dataset.doc) showDoc(btn.dataset.doc,btn.dataset.section);
+ else if(btn.dataset.doc) showDoc(btn.dataset.doc,btn.dataset.section,btn);
  else if(btn.id==='download'){
   const r=load(current);
   const url=URL.createObjectURL(new Blob([toJSON(r)],{type:'application/json'}));
@@ -147,7 +180,8 @@ document.addEventListener('submit',async e=>{
    }
    save({...r,sources:[...r.sources,doc],events:[...r.events,{action:'新增佐證',from:r.status,to:r.status,role:'填報人',time:new Date().toISOString(),note:doc.title}]}); msg='文件已新增，可到證據檢索查詢。';
   }
- }catch(error){hasError=true;msg=error.message;const n=$('.notice');if(n){n.textContent=msg;n.classList.add('error');}return;}
+ }catch(error){hasError=true;msg=error.message;const n=$('.notice');if(n){n.textContent=msg;n.classList.add('error');}if(f.id==='report'&&e.submitter?.value==='return')$("#report [name=note]")?.focus();else n?.focus();return;}
  render();
+ $('.notice')?.focus();
 });
 render();
